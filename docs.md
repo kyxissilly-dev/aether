@@ -11,7 +11,7 @@ print(Aether.Version)
 The current release is:
 
 ```text
-0.5.3
+0.6.0
 ```
 
 ---
@@ -57,7 +57,7 @@ local Window = Aether:CreateWindow({
 |---|---|---|---|
 | `name` | `string` | `"Aether"` | Window title |
 | `subtitle` | `string` | `""` | Smaller text below the title |
-| `icon` | `string` / asset id | `"globe"` | Window icon |
+| `icon` | `string` / `number` | `"globe"` | Window icon |
 | `size` | `Vector2` / `UDim2` | `685x450` | Window size |
 | `theme` | `table` | default theme | Overrides supported theme values |
 | `parent` | `Instance` | automatic | GUI parent |
@@ -157,7 +157,7 @@ local MainTab = Window:CreateTab({
 | Option | Type | Description |
 |---|---|---|
 | `name` | `string` | Tab name |
-| `icon` | `string` / asset id | Tab icon |
+| `icon` | `string` / `number` | Tab icon |
 
 The first tab created is selected automatically.
 
@@ -171,27 +171,122 @@ MainTab:Select()
 
 # Icons
 
-Aether includes several built-in icon names:
+Aether 0.6.0 uses a Rayfield Gen 2-style image resolver.
 
-```lua
-"globe"
-"eye"
-"search"
-```
+The same icon input works on windows, tabs, controls, and notifications.
 
-You can also use a Roblox asset id:
+## Supported image values
+
+### Numeric asset id
 
 ```lua
 icon = 123456789
 ```
 
-or:
+Numeric strings are also accepted:
+
+```lua
+icon = "123456789"
+```
+
+Both resolve to:
+
+```text
+rbxassetid://123456789
+```
+
+### `rbxassetid://`
 
 ```lua
 icon = "rbxassetid://123456789"
 ```
 
-If an unknown string is used where Aether cannot resolve an asset, it falls back to a simple text-based icon.
+### `rbxasset://`
+
+```lua
+icon = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+```
+
+### `rbxthumb://`
+
+```lua
+icon = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
+```
+
+### Other image/content strings
+
+Like Rayfield Gen 2's normal image resolver, other strings are passed through to the Roblox `Image` property instead of being rejected by Aether.
+
+This means executor/runtime-provided image strings such as values returned by `getcustomasset(...)` can be used directly:
+
+```lua
+icon = getcustomasset("Aether/my_icon.png")
+```
+
+Aether passes custom strings through unchanged. Whether Roblox or the current runtime can render a particular string still depends on that runtime.
+
+## Built-in image names
+
+Aether includes these resolver-backed image names:
+
+```text
+close
+minimise
+minimize
+maximise
+maximize
+settings
+search
+chevron
+check
+dot
+colorpicker
+banner
+config
+rayfield
+```
+
+Example:
+
+```lua
+MainTab:CreateButton({
+    name = "Settings",
+    icon = "settings",
+    callback = function()
+        print("settings")
+    end,
+})
+```
+
+`search` now resolves to the Gen 2 image asset instead of Aether's old drawn search icon.
+
+Aether also keeps its native procedural icons:
+
+```text
+globe
+eye
+```
+
+Those are drawn by Aether and do not require an external image asset.
+
+## Resolve an image yourself
+
+You can use the same resolver directly:
+
+```lua
+print(Aether.ResolveImage(123456789))
+print(Aether:ResolveImage("search"))
+print(Aether.ResolveImage("rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"))
+```
+
+Aether also exposes the numeric built-in image table:
+
+```lua
+print(Aether.Icons.search)
+print(Aether.Icons.settings)
+```
+
+This is useful if you need the raw asset id rather than the resolved image string.
 
 ---
 
@@ -237,7 +332,7 @@ local Toggle = MainTab:CreateToggle({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Toggle name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `value` | `boolean` | `false` | Starting state |
 | `callback` | `function` | empty function | Called when the value changes |
@@ -305,7 +400,7 @@ local Input = MainTab:CreateInput({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Control name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `placeholder` | `string` | `"Type here"` | Placeholder text |
 | `value` | any convertible to string | `""` | Initial value |
@@ -381,7 +476,7 @@ local FlySpeed = MainTab:CreateSlider({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Slider name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `min` | `number` | `0` | Minimum value |
 | `max` | `number` | `100` | Maximum value |
@@ -495,7 +590,7 @@ local Mode = MainTab:CreateDropdown({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Dropdown name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `values` | `table` | `{}` | Available values |
 | `options` | `table` | `{}` | Alias for `values` |
@@ -575,7 +670,7 @@ The control includes:
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Color picker name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `value` | `Color3` | current theme accent | Initial color |
 | `callback` | `function` | empty function | Called with the selected `Color3` |
@@ -638,7 +733,7 @@ local ESPKeybind = MainTab:CreateKeybind({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | `string` | `"Element"` | Keybind name |
-| `icon` | `string` / asset id | none | Optional icon |
+| `icon` | `string` / `number` | none | Optional icon |
 | `flag` | `string` | generated | Flag used by the window |
 | `value` | `Enum.KeyCode` | `Enum.KeyCode.Unknown` | Bound key |
 | `callback` | `function` | empty function | Called when the bound key is pressed |
@@ -754,7 +849,7 @@ local TestButton = MainTab:CreateButton({
 | Option | Type | Description |
 |---|---|---|
 | `name` | `string` | Button name |
-| `icon` | `string` / asset id | Optional icon |
+| `icon` | `string` / `number` | Optional icon |
 | `callback` | `function` | Function called when clicked |
 
 ### Fire manually
@@ -794,7 +889,7 @@ Window:Notify({
 | `text` | `string` | `""` | Alias for `description` |
 | `type` | `string` | `"info"` | Notification style |
 | `duration` | `number` | automatic | Visible lifetime in seconds |
-| `icon` | `string` / asset id | automatic | Explicit icon override |
+| `icon` | `string` / `number` | automatic | Explicit icon override |
 
 Supported notification types:
 
@@ -1185,6 +1280,9 @@ local Button = Main:CreateButton({
 
 ```lua
 Aether.Version
+Aether.Icons
+Aether.ResolveImage(image)
+Aether:ResolveImage(image)
 
 Aether:CreateWindow(options)
 Aether:Notify(options)
