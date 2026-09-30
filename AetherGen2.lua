@@ -8,7 +8,7 @@ local LocalPlayer = Players.LocalPlayer
 
 local Aether = {}
 Aether.__index = Aether
-Aether.Version = "0.5.3"
+Aether.Version = "0.6.0"
 
 local DefaultTheme = {
     Window = Color3.fromRGB(18, 18, 19),
@@ -195,7 +195,28 @@ local FontMedium = font(Enum.FontWeight.Medium)
 local FontSemiBold = font(Enum.FontWeight.SemiBold)
 local FontRegular = font(Enum.FontWeight.Regular)
 
+local BuiltInIcons = {
+    close = 83277910885129,
+    minimise = 108115485663409,
+    minimize = 108115485663409,
+    maximise = 88738500661569,
+    maximize = 88738500661569,
+    settings = 129180860773723,
+    search = 100604009889706,
+    chevron = 88479147175134,
+    check = 125626312718314,
+    dot = 91452555903853,
+    colorpicker = 91452555903853,
+    banner = 111263549366178,
+    config = 125823673784681,
+    rayfield = 80387863064905
+}
+
 local function resolveAsset(asset)
+    if asset == nil or asset == 0 or asset == "" then
+        return ""
+    end
+
     if type(asset) == "number" then
         return "rbxassetid://" .. tostring(asset)
     end
@@ -204,15 +225,33 @@ local function resolveAsset(asset)
         return nil
     end
 
+    local name = string.lower(asset)
+    local builtIn = BuiltInIcons[name]
+    if builtIn then
+        return "rbxassetid://" .. tostring(builtIn)
+    end
+
     if asset:match("^%d+$") then
         return "rbxassetid://" .. asset
     end
 
-    if asset:match("^rbxassetid://") or asset:match("^rbxthumb://") or asset:match("^rbxasset://") then
+    local assetId = asset:match("^rbxassetid://(%d+)$")
+    if assetId then
+        return "rbxassetid://" .. assetId
+    end
+
+    if asset:sub(1, 11) == "rbxasset://" or asset:sub(1, 11) == "rbxthumb://" then
         return asset
     end
 
-    return nil
+    return asset
+end
+
+Aether.Icons = table.clone(BuiltInIcons)
+
+function Aether.ResolveImage(selfOrAsset, maybeAsset)
+    local asset = selfOrAsset == Aether and maybeAsset or selfOrAsset
+    return resolveAsset(asset)
 end
 
 local function makeEyeIcon(parent, color, size)
@@ -332,28 +371,26 @@ local function makeLetterIcon(parent, text, color, size)
 end
 
 local function makeIcon(parent, asset, color, size, fallback)
-    local resolved = resolveAsset(asset)
-
-    if resolved then
-        return create("ImageLabel", {
-            Parent = parent,
-            Size = UDim2.fromOffset(size, size),
-            BackgroundTransparency = 1,
-            Image = resolved,
-            ImageColor3 = color,
-            ImageTransparency = 0.08,
-            ScaleType = Enum.ScaleType.Fit
-        })
-    end
-
     local name = type(asset) == "string" and string.lower(asset) or nil
 
     if name == "eye" then
         return makeEyeIcon(parent, color, size)
     elseif name == "globe" then
         return makeGlobeIcon(parent, color, size)
-    elseif name == "search" then
-        return makeSearchIcon(parent, color, size)
+    end
+
+    local resolved = resolveAsset(asset)
+
+    if resolved and resolved ~= "" then
+        return create("ImageLabel", {
+            Parent = parent,
+            Size = UDim2.fromOffset(size, size),
+            BackgroundTransparency = 1,
+            Image = resolved,
+            ImageColor3 = color,
+            ImageTransparency = 0.04,
+            ScaleType = Enum.ScaleType.Fit
+        })
     end
 
     return makeLetterIcon(parent, fallback, color, size)
@@ -3513,7 +3550,7 @@ function Aether:CreateWindow(options)
         Size = UDim2.fromOffset(18, 18),
         BackgroundTransparency = 1
     })
-    makeSearchIcon(searchIconHost, theme.Secondary, 16)
+    makeIcon(searchIconHost, "search", theme.Secondary, 16, "S")
 
     local minimizeButton = actionButton(2)
     local minimizeIcon, minimizeLine, minimizeVLine = makeMinimizeIcon(minimizeButton, theme.Secondary)
