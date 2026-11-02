@@ -4,7 +4,7 @@ g.Version = "0.7.0"
 local HttpService = game:GetService("HttpService")
 
 local function opt(cfg, ...)
-    return b(cfg, ...)
+    return b(cfg, ...) or nil
 end
 
 local function register(tab, ctrl, flag, value)
